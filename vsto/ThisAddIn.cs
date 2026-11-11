@@ -9,6 +9,7 @@ namespace OutlookArchiveOnReply
     {
         private const string ARCHIVE_FOLDER_NAME = "Archiv";
         private const string ARCHIVE_FOLDER_NAME_EN = "Archive";
+        private const int MAX_SCAN_ITEMS = 300;
 
         private readonly Dictionary<MailItem, MailItem> _pendingReplies =
             new Dictionary<MailItem, MailItem>();
@@ -38,6 +39,77 @@ namespace OutlookArchiveOnReply
             };
 
             reply.Display();
+        }
+
+        internal bool IsArchivePending(MailItem reply)
+        {
+            return _pendingReplies.ContainsKey(reply);
+        }
+
+        internal void SetArchivePending(MailItem reply, bool pressed)
+        {
+            if (pressed)
+            {
+                if (_pendingReplies.ContainsKey(reply))
+                {
+                    return;
+                }
+
+                MailItem original = FindOriginalForReply(reply);
+                if (original == null)
+                {
+                    System.Windows.Forms.MessageBox.Show(
+                        "Die Original-E-Mail konnte nicht im Posteingang gefunden werden.",
+                        "Antworten + Archivieren",
+                        System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Information);
+                    return;
+                }
+
+                _pendingReplies[reply] = original;
+
+                ((ItemEvents_10_Event)reply).Close += delegate (ref bool cancel)
+                {
+                    _pendingReplies.Remove(reply);
+                };
+            }
+            else
+            {
+                _pendingReplies.Remove(reply);
+            }
+        }
+
+        private MailItem FindOriginalForReply(MailItem reply)
+        {
+            string replyIndex = reply.ConversationIndex;
+            if (string.IsNullOrEmpty(replyIndex) || replyIndex.Length < 32)
+            {
+                return null;
+            }
+
+            string originalIndex = replyIndex.Substring(0, replyIndex.Length - 10);
+
+            MAPIFolder inbox = Application.Session.GetDefaultFolder(OlDefaultFolders.olFolderInbox);
+
+            int scanned = 0;
+            foreach (object obj in inbox.Items)
+            {
+                if (++scanned > MAX_SCAN_ITEMS)
+                {
+                    break;
+                }
+
+                if (obj is MailItem candidate)
+                {
+                    string candidateIndex = candidate.ConversationIndex;
+                    if (string.Equals(candidateIndex, originalIndex, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return candidate;
+                    }
+                }
+            }
+
+            return null;
         }
 
         private void Application_ItemSend(object item, ref bool cancel)
