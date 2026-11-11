@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/2011/main"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="MailApp">
+
+  <Id>6f2c1a4e-9b3d-4e7a-8f5a-1c2d3e4f5a6b</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Contoso</ProviderName>
+  <DefaultLocale>de-DE</DefaultLocale>
+  <DisplayName DefaultValue="Antworten &amp; Archivieren" />
+  <Description DefaultValue="Verschiebt die beantwortete E-Mail nach dem Senden automatisch in den Archiv-Ordner." />
+  <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png" />
+  <SupportUrl DefaultValue="https://www.contoso.com/support" />
+
+  <AppDomains>
+    <AppDomain>https://localhost:3000</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.7" />
+    </Sets>
+  </Requirements>
+
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:3000/src/function-file.html" />
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadWriteMailbox</Permissions>
+
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" FormType="Read" ItemType="Message" />
+    <Rule xsi:type="ItemIs" FormType="Edit" ItemType="Message" />
+  </Rule>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <Sets>
+        <Set Name="Mailbox" MinVersion="1.7" />
+      </Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <FunctionFile resid="FunctionFile.Url" />
+
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="ArchiveGroup">
+                <Label resid="GroupLabel" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
+                </Icon>
+                <Control xsi:type="Button" id="ArchiveAndReplyButton">
+                  <Label resid="ArchiveAndReplyLabel" />
+                  <Tooltip resid="ArchiveAndReplyTooltip" />
+                  <Supertip>
+                    <Title resid="ArchiveAndReplyLabel" />
+                    <Description resid="ArchiveAndReplyTooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>archiveAndReply</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+
+          <ExtensionPoint xsi:type="LaunchEvent">
+            <LaunchEvents>
+              <LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="SoftBlock" />
+            </LaunchEvents>
+            <SourceLocation resid="FunctionFile.Url" />
+          </ExtensionPoint>
+
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://localhost:3000/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://localhost:3000/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://localhost:3000/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="FunctionFile.Url" DefaultValue="https://localhost:3000/src/function-file.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GroupLabel" DefaultValue="Archivierung" />
+        <bt:String id="ArchiveAndReplyLabel" DefaultValue="Antworten &amp; Archivieren" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="ArchiveAndReplyTooltip" DefaultValue="Öffnet das Antwortformular. Nach dem Senden wird die ursprüngliche E-Mail in den Ordner 'Archiv' verschoben." />
+      </bt:LongStrings>
+    </Resources>
+
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+      <Requirements>
+        <Sets>
+          <Set Name="Mailbox" MinVersion="1.7" />
+        </Sets>
+      </Requirements>
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>
