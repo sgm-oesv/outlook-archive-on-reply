@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Outlook;
 using Office = Microsoft.Office.Core;
@@ -18,7 +16,18 @@ namespace OutlookArchiveOnReply
         {
             if (ribbonID == "Microsoft.Outlook.Mail.Read")
             {
-                return GetResourceText("OutlookArchiveOnReply.Ribbon1.xml");
+                return
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+                    "<customUI xmlns=\"http://schemas.microsoft.com/office/2009/07/customui\">" +
+                    "<ribbon><tabs>" +
+                    "<tab idMso=\"TabReadMessage\">" +
+                    "<group id=\"ArchiveGroup\" label=\"Archivierung\">" +
+                    "<button id=\"archiveAndReplyButton\" label=\"Antworten + Archivieren\" " +
+                    "size=\"large\" imageMso=\"MailReplyAll\" onAction=\"OnArchiveReply\" visible=\"true\" />" +
+                    "</group>" +
+                    "</tab>" +
+                    "</tabs></ribbon>" +
+                    "</customUI>";
             }
             return null;
         }
@@ -31,26 +40,5 @@ namespace OutlookArchiveOnReply
                 Globals.ThisAddIn.StartArchiveReply(mail);
             }
         }
-
-        #region Hilfsmethoden
-
-        private static string GetResourceText(string resourceName)
-        {
-            Assembly asm = Assembly.GetExecutingAssembly();
-            foreach (string name in asm.GetManifestResourceNames())
-            {
-                if (name.EndsWith(resourceName, StringComparison.OrdinalIgnoreCase))
-                {
-                    using (Stream stream = asm.GetManifestResourceStream(name))
-                    using (var reader = new StreamReader(stream))
-                    {
-                        return reader.ReadToEnd();
-                    }
-                }
-            }
-            return null;
-        }
-
-        #endregion
     }
 }
