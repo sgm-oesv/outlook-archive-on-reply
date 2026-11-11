@@ -1,6 +1,6 @@
-# VSTO-Version: Antworten & Archivieren (klassisches Outlook, Windows)
+# VSTO-Version: Antworten + Archivieren (klassisches Outlook, Windows)
 
-Klassisches COM-/VSTO-Add-in für **Outlook Desktop (Windows)**. Fügt in einer gelesenen E-Mail eine Schaltfläche **„Antworten & Archivieren“** hinzu: öffnet das Antwortformular und verschiebt nach dem Senden die Original-E-Mail in den Ordner **„Archiv“** (Fallback „Archive“).
+Klassisches COM-/VSTO-Add-in für **Outlook Desktop (Windows)**. Fügt in einer gelesenen E-Mail eine Schaltfläche **„Antworten + Archivieren“** hinzu: öffnet das Antwortformular und verschiebt nach dem Senden die Original-E-Mail in den Ordner **„Archiv“** (Fallback „Archive“).
 
 ## Voraussetzungen
 
@@ -13,31 +13,38 @@ Klassisches COM-/VSTO-Add-in für **Outlook Desktop (Windows)**. Fügt in einer 
 
 Die Designerdateien eines VSTO-Projekts erzeugt Visual Studio automatisch – daher legt man das Projekt aus der Vorlage an und fügt die Quellcodedateien aus diesem Ordner ein:
 
-1. Visual Studio → **Neues Projekt** → Vorlage **„Outlook-VSTO-Add-In“** (C#) → Projektname **`OutlookArchiveOnReply`** (wichtig: exakt dieser Name, wegen des Namensraums und der Ribbon-Ressource).
+1. Visual Studio → **Neues Projekt** → Vorlage **„Outlook-VSTO-Add-In“** (C#) → Projektname **`OutlookArchiveOnReply`** (wichtig: exakt dieser Name, wegen des Namensraums).
 2. Im Projektmappen-Explorer:
    - Inhalt von **`ThisAddIn.cs`** (aus diesem Ordner) in die automatisch erstellte `ThisAddIn.cs` kopieren (alles ersetzen).
-   - Rechtsklick auf Projekt → **Hinzufügen → Neues Element → „Menüband (XML)“ (Ribbon (XML))** → Name `Ribbon1` lassen.
-   - Inhalt von **`Ribbon1.cs`** und **`Ribbon1.xml`** (aus diesem Ordner) in die erzeugten Dateien kopieren (alles ersetzen).
-3. Menüband-XML muss als **eingebettete Ressource** vorliegen: Eigenschaften von `Ribbon1.xml` → Buildvorgang = **„Ressource“** (Embedded Resource). (Bei Anlage über die Vorlage bereits korrekt gesetzt.)
+   - Rechtsklick auf Projekt → **Hinzufügen → Neues Element → „Klasse“** → Name `Ribbon1.cs` → Inhalt aus **`vsto/Ribbon1.cs`** einfügen (alles ersetzen).
+   - `Ribbon1.xml` wird nicht benötigt – das Ribbon-XML ist als Konstante direkt in `Ribbon1.cs` enthalten (robuster, keine Probleme mit eingebetteten Ressourcen).
+3. Sicherstellen, dass `Ribbon1.cs` im Projektmappen-Explorer unter dem Projekt liegt, **nicht ausgegraut** ist (falls doch: Rechtsklick → „In Projekt einschließen“) und als Buildvorgang **„Kompilieren“** hat (Datei anklicken → F4).
 
 ## Bauen und installieren
 
 1. **`F5`** drücken → Visual Studio startet Outlook mit dem Add-in (Debug-Modus). Alternativ: **Build → Projektmappe erstellen** erzeugt im Ordner `bin\Debug\` die **`.dll`** plus `.vsto`-Manifest und ClickOnce-Setup.
 2. Dauerhaft installieren (für Debug-Build): `bin\Debug\` → `OutlookArchiveOnReply.vsto` doppelklicken → ClickOnce-Installation. Für Verteilung: Projekt-Eigenschaften → **Veröffentlichen** → Setup (`setup.exe`) erzeugen.
-3. Nach dem Start von Outlook: E-Mail öffnen → im Menüband der Lesemail erscheint die Gruppe **„Archivierung“** mit **„Antworten & Archivieren“**.
+3. Nach dem Start von Outlook: E-Mail öffnen → im Menüband der Lesemail erscheint die Gruppe **„Archivierung“** mit **„Antworten + Archivieren“**.
 
 ## Funktionsweise
 
-- `Ribbon1.xml` fügt den Button in den Standard-Tab **„TabReadMessage“** (Lesemail) ein.
+- `Ribbon1.cs` liefert das Ribbon-XML inline und fügt den Button in den Standard-Tab **„TabReadMessage“** (Lesemail) ein.
 - Klick → `Ribbon1.OnArchiveReply` → `ThisAddIn.StartArchiveReply`: erstellt per `MailItem.Reply()` die Antwort, merkt sich das Zuordnungspaar (Antwort → Original) und zeigt das Antwortfenster.
 - Schließt der Nutzer die Antwort **ohne Senden**, wird die Zuordnung beim `Close`-Event wieder entfernt.
 - `Application.ItemSend`: Wird die gemerkte Antwort gesendet, wird das Original per `MailItem.Move()` in den Archiv-Ordner verschoben (sucht „Archiv“/„Archive“ im gesamten Postfach, rekursiv).
 - Andere, normale gesendete Mails werden nicht verändert.
 
+## Fehlerbehebung (bekannt aus der Praxis)
+
+- **„Typ- oder Namespacename ‚Ribbon1‘ wurde nicht gefunden“**: `Ribbon1.cs` liegt nicht im Projekt (im Projektmappen-Explorer prüfen; ausgraue Datei → „In Projekt einschließen“) oder hat nicht den Buildvorgang „Kompilieren“. Notlösung: Klasse in `ThisAddIn.cs` verschieben.
+- **Outlook startet bei F5 nicht**: alter OUTLOOK.EXE-Prozess läuft noch → im Task-Manager beenden, dann `Umschalt+F5` und erneut F5.
+- **Button erscheint nicht**: Ribbon-XML wurde nicht geladen. Diagnose: Haltepunkt in `GetCustomUI` – muss beim Öffnen einer Mail mit `ribbonID == "Microsoft.Outlook.Mail.Read"` aufgerufen werden.
+- **Button ohne Icon**: `imageMso`-Name je nach Outlook-Version nicht verfügbar – `MailReplyAll` ist breit verfügbar, oder `imageMso` weglassen.
+
 ## Anpassungen
 
 - **Zielordner**: `ARCHIVE_FOLDER_NAME` / `ARCHIVE_FOLDER_NAME_EN` in `ThisAddIn.cs`.
-- **Button-Icon**: `imageMso` in `Ribbon1.xml` (z. B. `AutoArchive`, `ArchiveFolder`, `FileArchive`).
+- **Button-Icon**: `imageMso` in der XML-Konstante in `Ribbon1.cs` (z. B. `MailReplyAll`, `ArchiveFolder`). Je nach Outlook-Version sind nicht alle Namen verfügbar; `imageMso` kann auch ganz weggelassen werden.
 
 ## Hinweise
 
